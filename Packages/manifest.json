@@ -2,6 +2,7 @@
   "dependencies": {
     "com.gitamend.improvedtimers": "https://github.com/adammyhre/Unity-Improved-Timers.git",
     "com.gitamend.unityutils": "https://github.com/adammyhre/Unity-Utils.git",
+    "com.kylewbanks.scenerefattribute": "https://github.com/KyleBanks/scene-ref-attribute.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.ai.navigation": "2.0.3",
     "com.unity.animation.rigging": "1.3.0",
