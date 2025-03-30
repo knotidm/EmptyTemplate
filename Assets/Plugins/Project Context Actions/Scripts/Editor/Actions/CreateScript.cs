@@ -12,7 +12,7 @@ namespace InfinityCode.ProjectContextActions.Actions
     {
         static CreateScript()
         {
-            ItemDrawer.Register(ItemDrawers.CreateScript, DrawButton, 10);
+            ItemDrawer.Register(ItemDrawers.CreateScript, DrawButton, ToolOrder.CreateScript);
         }
         
         private static void AppendBuiltInTemplates(ProjectItem item, GenericMenu menu)
@@ -35,25 +35,58 @@ namespace InfinityCode.ProjectContextActions.Actions
             menu.AddItem(new GUIContent("Assembly Definition"), false, OnCreateScript, new object[] { item.asset, "Assembly Definition" });
             menu.AddItem(new GUIContent("Assembly Definition Reference"), false, OnCreateScript, new object[] { item.asset, "Assembly Definition Reference" });
         }
+        
+        private static void AppendEntitiesTemplates(ProjectItem item, GenericMenu menu)
+        {
+            if (!PackageLocator.hasEntities) return;
+            
+            menu.AddItem(new GUIContent("Entities/IComponentData"), false, OnCreateScript, new object[] { item.asset, "Entities IComponentData" });
+            menu.AddItem(new GUIContent("Entities/IJobEntity"), false, OnCreateScript, new object[] { item.asset, "Entities IJobEntity" });
+            menu.AddItem(new GUIContent("Entities/ISystem"), false, OnCreateScript, new object[] { item.asset, "Entities ISystem" });
+            menu.AddItem(new GUIContent("Entities/Baker"), false, OnCreateScript, new object[] { item.asset, "Entities Baker" });
+            menu.AddItem(new GUIContent("Entities/SystemBase"), false, OnCreateScript, new object[] { item.asset, "Entities SystemBase" });
+        }
+
+        private static void AppendJobsTemplates(ProjectItem item, GenericMenu menu)
+        {
+            string extra = PackageLocator.hasBurst? " Burst": "";
+            
+            menu.AddItem(new GUIContent("Job System/IJob"), false, OnCreateScript, new object[] { item.asset, $"Jobs IJob{extra}" });
+            menu.AddItem(new GUIContent("Job System/IJobParallelFor"), false, OnCreateScript, new object[] { item.asset, $"Jobs IJobParallelFor{extra}" });
+            menu.AddItem(new GUIContent("Job System/IJobParallelForTransform"), false, OnCreateScript, new object[] { item.asset, $"Jobs IJobParallelForTransform{extra}" });
+            menu.AddItem(new GUIContent("Job System/IJobFor"), false, OnCreateScript, new object[] { item.asset, $"Jobs IJobFor{extra}" });
+        }
 
         private static void AppendUserTemplates(ProjectItem item, GenericMenu menu)
         {
             string[] files = Directory.GetFiles("Assets/", "*.txt", SearchOption.AllDirectories);
             if (files.Length == 0) return;
             
-            menu.AddSeparator("");
+            bool addSeparator = true;
             
             string scriptTemplatesFolder = Utils.ScriptTemplatesFolder.Replace('/', '\\');
 
             foreach (string file in files)
             {
                 if (!file.EndsWith(".cs.txt")) continue;
-                
                 if (file.Replace('/', '\\').StartsWith(scriptTemplatesFolder)) continue;
+                
+                if (addSeparator)
+                {
+                    menu.AddSeparator("");
+                    addSeparator = false;
+                }
                 
                 string name = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(file));
                 menu.AddItem(new GUIContent("User Templates/" + name), false, CreateUserScript, new object[] { item.asset, file });
             }
+        }
+        
+        private static void AppendZenjectTemplates(ProjectItem item, GenericMenu menu)
+        {
+            if (!PackageLocator.hasZenject) return;
+            menu.AddItem(new GUIContent("Zenject/Mono Installer"), false, OnCreateScript, new object[] { item.asset, "Zenject MonoInstaller" });
+            menu.AddItem(new GUIContent("Zenject/ScriptableObject Installer"), false, OnCreateScript, new object[] { item.asset, "Zenject ScriptableObjectInstaller" });
         }
         
         private static void CreateUserScript(object userdata)
@@ -125,6 +158,12 @@ namespace InfinityCode.ProjectContextActions.Actions
             GenericMenu menu = new GenericMenu();
 
             AppendBuiltInTemplates(item, menu);
+            
+            menu.AddSeparator("");
+
+            AppendEntitiesTemplates(item, menu);
+            AppendJobsTemplates(item, menu);
+            AppendZenjectTemplates(item, menu);
             AppendUserTemplates(item, menu);
 
             menu.ShowAsContext();

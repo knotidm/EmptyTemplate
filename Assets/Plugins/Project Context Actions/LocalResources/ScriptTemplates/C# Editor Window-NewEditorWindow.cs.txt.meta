@@ -9,7 +9,7 @@ AssetOrigin:
   serializedVersion: 1
   productId: 267429
   packageName: Project Context Actions
-  packageVersion: 4.0
-  assetPath: Assets/Plugins/Infinity Code/Project Context Actions/LocalResources/ScriptTemplates/C#
+  packageVersion: 4.1
+  assetPath: Assets/Plugins/Project Context Actions/LocalResources/ScriptTemplates/C#
     Editor Window-NewEditorWindow.cs.txt
-  uploadId: 679637
+  uploadId: 705496

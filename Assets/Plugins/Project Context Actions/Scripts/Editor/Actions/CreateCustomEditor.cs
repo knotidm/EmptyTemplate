@@ -15,7 +15,7 @@ namespace InfinityCode.ProjectContextActions.Actions
     {
         static CreateCustomEditor()
         {
-            ItemDrawer.Register(ItemDrawers.CreateCustomEditor, DrawButton);
+            ItemDrawer.Register(ItemDrawers.CreateCustomEditor, DrawButton, ToolOrder.CreateCustomEditor);
         }
 
         private static void DrawButton(ProjectItem item)

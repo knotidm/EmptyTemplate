@@ -9,7 +9,7 @@ namespace InfinityCode.ProjectContextActions
 {
     public static class Utils
     {
-        public const string Version = "4.0";
+        public const string Version = "4.1";
         
         private static string _assetFolder;
         private static string _iconsFolder;

@@ -3,7 +3,6 @@
 
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace InfinityCode.ProjectContextActions.Actions
 {
@@ -12,34 +11,13 @@ namespace InfinityCode.ProjectContextActions.Actions
     {
         static CreateMaterial()
         {
-            ItemDrawer.Register(ItemDrawers.CreateMaterial, DrawButton, 10);
+            ItemDrawer.Register(ItemDrawers.CreateMaterial, DrawButton, ToolOrder.CreateMaterial);
         }
         
         private static void Create(ProjectItem item)
         {
             Selection.activeObject = item.asset;
-
-            Shader shader;
-
-#if UNITY_6000_0_OR_NEWER
-            RenderPipelineAsset rp = GraphicsSettings.defaultRenderPipeline;
-#else
-            RenderPipelineAsset rp = GraphicsSettings.renderPipelineAsset;
-#endif
-            if (rp != null)
-            {
-                if (rp.GetType().Name.Contains("HDRenderPipelineAsset"))
-                {
-                    shader = Shader.Find("HDRenderPipeline/Lit");
-                }
-                else
-                {
-                    shader = Shader.Find("Universal Render Pipeline/Lit");
-                }
-            }
-            else shader = Shader.Find("Standard"); 
-            
-            Material material = new Material(shader);
+            Material material = new Material(RenderPipelineHelper.GetDefaultShader());
             ProjectWindowUtil.CreateAsset(material, "New Material.mat");
         }
 

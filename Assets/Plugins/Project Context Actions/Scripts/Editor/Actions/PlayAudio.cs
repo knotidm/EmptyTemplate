@@ -14,7 +14,7 @@ namespace InfinityCode.ProjectContextActions.Actions
 
         static PlayAudio()
         {
-            ItemDrawer.Register(ItemDrawers.PlayAudio, DrawButton, 10);
+            ItemDrawer.Register(ItemDrawers.PlayAudio, DrawButton, ToolOrder.PlayAudio);
         }
 
         private static void DrawButton(ProjectItem item)

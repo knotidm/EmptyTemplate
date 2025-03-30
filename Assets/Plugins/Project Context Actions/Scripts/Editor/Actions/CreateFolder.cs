@@ -32,7 +32,7 @@ namespace InfinityCode.ProjectContextActions.Actions
 
         static CreateFolder()
         {
-            ItemDrawer.Register(ItemDrawers.CreateFolder, DrawButton);
+            ItemDrawer.Register(ItemDrawers.CreateFolder, DrawButton, ToolOrder.CreateFolder);
         }
 
         private static void DrawButton(ProjectItem item)
