@@ -13,6 +13,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 234445
   packageName: Editor Auto Save
-  packageVersion: 1.1.0
-  assetPath: Assets/IntenseNation/Editor Auto Save/Editor/EditorAutoSave.cs
-  uploadId: 564918
+  packageVersion: 1.2.0
+  assetPath: Assets/Plugins/Editor Auto Save/Editor/EditorAutoSave.cs
+  uploadId: 776815

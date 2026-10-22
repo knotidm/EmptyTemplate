@@ -9,6 +9,6 @@ AssetOrigin:
   serializedVersion: 1
   productId: 244446
   packageName: Audio Preview Tool
-  packageVersion: 1.0
-  assetPath: Assets/WarpedImagination/AudioPreviewTool/Support.url
-  uploadId: 556326
+  packageVersion: 1.1.0
+  assetPath: Assets/Plugins/AudioPreviewTool/Support.url
+  uploadId: 838382

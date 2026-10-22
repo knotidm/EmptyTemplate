@@ -5,7 +5,6 @@
 ////  || ||  \||  ////                                      ////
 ////////////////////////////////////////////////////////////////
 
-using System;
 using System.Collections;
 using UnityEngine;
 using Unity.EditorCoroutines.Editor;
@@ -22,6 +21,8 @@ namespace IntenseNation.EditorAutoSave
 
         private static int _selectedDebugOptions = 1;
         private static bool _autoSave = true;
+        private static bool _saveScenes = true;
+        private static bool _saveProject = true;
         private static bool _backUp;
         private static bool _savePrompt;
         private static bool _countDown = true;
@@ -57,10 +58,12 @@ namespace IntenseNation.EditorAutoSave
             _versionControlLimit = EditorPrefs.GetInt("VersionControlLimit", _versionControlLimit);
             _selectedDebugOptions = EditorPrefs.GetInt("SelectedDebugOptions", _selectedDebugOptions);
             _autoSave = EditorPrefs.GetBool("Autosave", _autoSave);
+            _saveScenes = EditorPrefs.GetBool("SaveScenes", _saveScenes);
+            _saveProject = EditorPrefs.GetBool("SaveProject", _saveProject);
             _backUp = EditorPrefs.GetBool("BackUp", _backUp);
             _versionControl = EditorPrefs.GetBool("VersionControl", _versionControl);
             _savePrompt = EditorPrefs.GetBool("SavePrompt", _savePrompt);
-            _countDown = EditorPrefs.GetBool("Countdown", _countDown);
+            _countDown = EditorPrefs.GetBool("CountDown", _countDown);
             _saveNotification = EditorPrefs.GetBool("SaveNotification", _saveNotification);
             _versionControlLimitState = EditorPrefs.GetBool("VersionControlLimitState", _versionControlLimitState);
 
@@ -82,6 +85,8 @@ namespace IntenseNation.EditorAutoSave
             GUILayout.Label("Main", EditorStyles.boldLabel);
             _autoSave = EditorGUILayout.Toggle("Enable Auto Save", _autoSave);
             _saveTime = EditorGUILayout.Slider("Save Time (In Minutes)", _saveTime, 0.1f, 120);
+            _saveScenes = EditorGUILayout.Toggle(new GUIContent("Save Scenes", "If toggled off the opened scenes will NOT be saved"), _saveScenes);
+            _saveProject = EditorGUILayout.Toggle(new GUIContent("Save Project", "If toggled off only the changed project settings or assets will NOT be saved"), _saveProject);
             EditorGUILayout.Space(10);
 
             //Properties
@@ -135,6 +140,8 @@ namespace IntenseNation.EditorAutoSave
             EditorPrefs.SetInt("SelectedDebugOptions", _selectedDebugOptions);
             EditorPrefs.SetInt("VersionControlLimit", _versionControlLimit);
             EditorPrefs.SetBool("Autosave", _autoSave);
+            EditorPrefs.SetBool("SaveScenes", _saveScenes);
+            EditorPrefs.SetBool("SaveProject", _saveProject);
             EditorPrefs.SetBool("BackUp", _backUp);
             EditorPrefs.SetBool("VersionControl", _versionControl);
             EditorPrefs.SetBool("SavePrompt", _savePrompt);
@@ -182,132 +189,154 @@ namespace IntenseNation.EditorAutoSave
             if (EditorApplication.isPlaying) return;
             var saveState = true;
 
-            if (_backUp)
+            if (_saveScenes)
             {
-                var activePath = EditorSceneManager.GetActiveScene().path;
-                var path = activePath.Split(char.Parse("/"));
-                path[path.Length - 1] = "Backup/AutoSaveBackup_" + path[path.Length - 1];
-                var folderPath = "";
-
-                for (int i = 0; i < path.Length - 1; i++)
+                if (_backUp)
                 {
-                    folderPath += path[i];
+                    var activePath = EditorSceneManager.GetActiveScene().path;
+                    var path = activePath.Split(char.Parse("/"));
+                    path[path.Length - 1] = "Backup/AutoSaveBackup_" + path[path.Length - 1];
+                    var folderPath = "";
 
-                    if (i < path.Length - 2)
-                        folderPath += "/";
-                }
-
-                if (!AssetDatabase.IsValidFolder(folderPath + "/Backup"))
-                {
-                    AssetDatabase.CreateFolder(folderPath, "Backup");
-
-                    if (_selectedDebugOptions == 0)
+                    for (int i = 0; i < path.Length - 1; i++)
                     {
-                        Debug.Log("Backup folder didn't exist, created a new one");
+                        folderPath += path[i];
+
+                        if (i < path.Length - 2)
+                            folderPath += "/";
                     }
-                    else if (_selectedDebugOptions == 1)
+
+                    if (!AssetDatabase.IsValidFolder(folderPath + "/Backup"))
                     {
-                        Debug.Log(folderPath);
-                    }
-                }
+                        AssetDatabase.CreateFolder(folderPath, "Backup");
 
-                if (_versionControl)
-                {
-                    string[] locatedFiles = Directory.GetFiles(folderPath + "/Backup");
-                    List<string> savedScenes = new List<string>();
-                    List<int> savedScenesNumbers = new List<int>();
-                    string sceneName = "";
-
-                    for (int i = 0; i < locatedFiles.Length; i++)
-                    {
-                        string[] filePaths = activePath.Split(char.Parse("/"));
-                        sceneName = filePaths[filePaths.Length - 1].Replace("Backup/", "").Replace(".unity", "");
-
-                        if (!locatedFiles[i].Contains(".meta") && locatedFiles[i].Contains(sceneName))
+                        if (_selectedDebugOptions == 0)
                         {
-                            savedScenes.Add(locatedFiles[i]);
+                            Debug.Log("Backup folder didn't exist, created a new one");
+                        }
+                        else if (_selectedDebugOptions == 1)
+                        {
+                            Debug.Log(folderPath);
                         }
                     }
 
-                    for (int i = 0; i < savedScenes.Count; i++)
+                    if (_versionControl)
                     {
-                        string[] fileNumbers = savedScenes[i].Split(char.Parse("_"));
-                        string fileNumber = fileNumbers[fileNumbers.Length - 1].Replace(".unity", "");
-                        savedScenesNumbers.Add(fileNumber == sceneName && i == 0 ? 0 : int.Parse(fileNumber));
-                    }
+                        string[] locatedFiles = Directory.GetFiles(folderPath + "/Backup");
+                        List<string> savedScenes = new List<string>();
+                        List<int> savedScenesNumbers = new List<int>();
+                        string sceneName = "";
 
-                    savedScenesNumbers.Sort();
-                    int scenesNumber = savedScenesNumbers.Count > 0
-                        ? savedScenesNumbers[savedScenesNumbers.Count - 1]
-                        : 0;
-
-                    if (_versionControlLimitState)
-                    {
-                        if (scenesNumber > savedScenes.Count || scenesNumber >= _versionControlLimit)
+                        for (int i = 0; i < locatedFiles.Length; i++)
                         {
-                            if (scenesNumber > 1)
+                            string[] filePaths = activePath.Split(char.Parse("/"));
+                            sceneName = filePaths[filePaths.Length - 1].Replace("Backup/", "").Replace(".unity", "");
+
+                            if (!locatedFiles[i].Contains(".meta") && locatedFiles[i].Contains(sceneName))
                             {
-                                for (int i = 0; i < savedScenes.Count; i++)
+                                savedScenes.Add(locatedFiles[i]);
+                            }
+                        }
+
+                        for (int i = 0; i < savedScenes.Count; i++)
+                        {
+                            string[] fileNumbers = savedScenes[i].Split(char.Parse("_"));
+                            string fileNumber = fileNumbers[fileNumbers.Length - 1].Replace(".unity", "");
+                            savedScenesNumbers.Add(fileNumber == sceneName && i == 0 ? 0 : int.Parse(fileNumber));
+                        }
+
+                        savedScenesNumbers.Sort();
+                        int scenesNumber = savedScenesNumbers.Count > 0 ? savedScenesNumbers[savedScenesNumbers.Count - 1] : 0;
+
+                        if (_versionControlLimitState)
+                        {
+                            if (scenesNumber > savedScenes.Count || scenesNumber >= _versionControlLimit)
+                            {
+                                if (scenesNumber > 1)
                                 {
-                                    string[] scenePath = savedScenes[i].Split(char.Parse(@"\"));
-                                    scenePath[scenePath.Length - 1] = scenePath[scenePath.Length - 1]
-                                        .Replace(savedScenesNumbers[i].ToString(), (i + 1).ToString());
-                                    AssetDatabase.RenameAsset(savedScenes[i], scenePath[scenePath.Length - 1]);
+                                    for (int i = 0; i < savedScenes.Count; i++)
+                                    {
+                                        string[] scenePath = savedScenes[i].Split(char.Parse(@"\"));
+                                        scenePath[scenePath.Length - 1] = scenePath[scenePath.Length - 1].Replace(savedScenesNumbers[i].ToString(), (i + 1).ToString());
+                                        AssetDatabase.RenameAsset(savedScenes[i], scenePath[scenePath.Length - 1]);
+                                    }
+
+                                    scenesNumber = savedScenes.Count;
                                 }
-
-                                scenesNumber = savedScenes.Count;
                             }
 
-                        }
-
-                        if (savedScenes.Count > _versionControlLimit)
-                        {
-                            for (int i = 0; i < savedScenes.Count - _versionControlLimit; i++)
+                            if (savedScenes.Count > _versionControlLimit)
                             {
-                                AssetDatabase.DeleteAsset(savedScenes[i]);
-                                savedScenes.Remove(savedScenes[i]);
+                                for (int i = 0; i < savedScenes.Count - _versionControlLimit; i++)
+                                {
+                                    AssetDatabase.DeleteAsset(savedScenes[i]);
+                                    savedScenes.Remove(savedScenes[i]);
+                                }
                             }
+                        }
+
+                        if (savedScenes.Count > 0)
+                        {
+                            path[path.Length - 1] = "Backup/AutoSaveBackup_" + activePath.Split(char.Parse("/"))[path.Length - 1].Replace(".unity", "_") + (scenesNumber + (!_versionControlLimitState ? 1 : savedScenes.Count >= _versionControlLimit ? 0 : 1)) + ".unity";
                         }
                     }
 
-                    if (savedScenes.Count > 0)
+                    AssetDatabase.CopyAsset(activePath, string.Join("/", path));
+
+                    if (_savePrompt)
                     {
-                        path[path.Length - 1] = "Backup/AutoSaveBackup_" +
-                                                activePath.Split(char.Parse("/"))[path.Length - 1]
-                                                    .Replace(".unity", "_") +
-                                                (scenesNumber + (!_versionControlLimitState ? 1 :
-                                                    savedScenes.Count >= _versionControlLimit ? 0 : 1)) + ".unity";
+                        saveState = EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
+                    }
+
+                    if (saveState)
+                    {
+                        EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), activePath);
                     }
                 }
-
-                AssetDatabase.CopyAsset(activePath, string.Join("/", path));
-
-                if (_savePrompt)
+                else
                 {
-                    saveState = EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-                }
-
-                if (saveState)
-                {
-                    EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene(), activePath);
+                    EditorSceneManager.SaveOpenScenes();
                 }
             }
-            else
+
+            if (_saveProject)
             {
-                EditorSceneManager.SaveOpenScenes();
+                AssetDatabase.SaveAssets();
             }
-
+            
             if (saveState && _saveNotification)
             {
                 foreach (SceneView scene in SceneView.sceneViews)
                 {
-                    scene.ShowNotification(new GUIContent("Scene Saved Successfully!"));
+                    if (_saveScenes && !_saveProject)
+                    {
+                        scene.ShowNotification(new GUIContent("Scene Saved Successfully!"));
+                    }
+                    else if (!_saveScenes && _saveProject)
+                    {
+                        scene.ShowNotification(new GUIContent("Project Saved Successfully!"));
+                    }
+                    else if (_saveScenes && _saveProject)
+                    {
+                        scene.ShowNotification(new GUIContent("Scene and Project Saved Successfully!"));
+                    }
                 }
             }
 
             if (_selectedDebugOptions == 0)
             {
-                Debug.Log("Saved Open Scene");
+                if (_saveScenes && !_saveProject)
+                {
+                    Debug.Log("Saved open scenes");
+                }
+                else if (!_saveScenes && _saveProject)
+                {
+                    Debug.Log("Saved the Project");
+                }
+                else if (_saveScenes && _saveProject)
+                {
+                    Debug.Log("Saved open scenes and project");
+                }
             }
         }
     }
